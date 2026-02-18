@@ -7,5 +7,5 @@ export async function GET(
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
   const { sessionId } = await params;
-  return forwardToServer(req, `/api/patches/status/${sessionId}`, 'GET');
+  return forwardToServer(req, `/api/data/status/${sessionId}`, 'GET');
 }
