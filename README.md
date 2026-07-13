@@ -37,9 +37,8 @@ Used in:
 If incorrect/missing:
 - Vercel relay returns `502 RELAY_ERROR` when it cannot reach backend server
 
-Production file routes require an HTTPS origin by default. If the backend is intentionally exposed as a plaintext
-HTTP IP address, set `FILES_ALLOW_INSECURE_SERVER_URL=true`. This is an explicit security downgrade: upload payloads
-remain protected by AWR2, but unencrypted download bytes are visible on the Vercel-to-server network path.
+Production file routes accept HTTP and HTTPS origins. With a plaintext HTTP origin, upload payloads remain protected by
+AWR2, but unencrypted download bytes are visible on the Vercel-to-server network path.
 
 ### `SERVER_API_KEY`
 
