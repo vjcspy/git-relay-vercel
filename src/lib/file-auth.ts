@@ -7,15 +7,7 @@ const SESSION_VERSION = 'v1';
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 export function deploymentReadinessError(): string | null {
-  if (!process.env.FILES_PASSWORD || process.env.FILES_PASSWORD.length < 24) {
-    return 'FILES_PASSWORD must be configured with at least 24 characters';
-  }
-  if (!process.env.FILES_SESSION_SECRET || process.env.FILES_SESSION_SECRET.length < 32) {
-    return 'FILES_SESSION_SECRET must be configured with at least 32 characters';
-  }
-  if (process.env.NODE_ENV === 'production' && process.env.FILES_LOGIN_WAF_CONFIRMED !== 'true') {
-    return 'The required Vercel WAF rate-limit rule has not been confirmed';
-  }
+  if (!process.env.FILES_PASSWORD) return 'FILES_PASSWORD is not configured';
   if (!process.env.SERVER_API_KEY) return 'SERVER_API_KEY is not configured';
   if (!process.env.FILE_TRANSPORT_KEY_ID || !process.env.FILE_TRANSPORT_PUBLIC_KEY_PEM) {
     return 'Browser transport-v2 public key configuration is missing';
@@ -87,5 +79,8 @@ export function clearSessionCookie(response: NextResponse): void {
 }
 
 function sign(payload: string): string {
-  return createHmac('sha256', process.env.FILES_SESSION_SECRET!).update(payload).digest('base64url');
+  const signingKey = createHmac('sha256', process.env.FILES_PASSWORD!)
+    .update('git-relay:file-session:v1')
+    .digest();
+  return createHmac('sha256', signingKey).update(payload).digest('base64url');
 }

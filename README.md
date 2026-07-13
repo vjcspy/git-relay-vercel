@@ -52,6 +52,15 @@ Used in:
 If incorrect/missing:
 - Backend server returns `401 UNAUTHORIZED` for forwarded `/api/*` requests
 
+### `FILES_PASSWORD`
+
+Purpose:
+- Authenticates the `/files` page
+- Derives the signing key for its eight-hour HttpOnly session cookie
+
+There is no separate session-secret or WAF-confirmation environment variable. Changing `FILES_PASSWORD` immediately
+invalidates existing file-page sessions.
+
 ## V2 Transport Encryption Note (No Additional Vercel Env Needed)
 
 When migrating transport encryption to `v2`:
