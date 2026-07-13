@@ -9,9 +9,6 @@ const SESSION_TTL_SECONDS = 60 * 60 * 8;
 export function deploymentReadinessError(): string | null {
   if (!process.env.FILES_PASSWORD) return 'FILES_PASSWORD is not configured';
   if (!process.env.SERVER_API_KEY) return 'SERVER_API_KEY is not configured';
-  if (!process.env.FILE_TRANSPORT_KEY_ID || !process.env.FILE_TRANSPORT_PUBLIC_KEY_PEM) {
-    return 'Browser transport-v2 public key configuration is missing';
-  }
   try {
     getValidatedServerUrl();
   } catch (error) {

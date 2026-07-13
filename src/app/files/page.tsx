@@ -7,12 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function FilesPage() {
-  return (
-    <FileTransfer
-      transportConfig={{
-        keyId: process.env.FILE_TRANSPORT_KEY_ID || '',
-        publicKeyPem: (process.env.FILE_TRANSPORT_PUBLIC_KEY_PEM || '').replace(/\\n/g, '\n'),
-      }}
-    />
-  );
+  return <FileTransfer />;
 }

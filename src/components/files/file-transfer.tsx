@@ -32,7 +32,7 @@ interface StatusPayload {
   details?: { error?: string };
 }
 
-export function FileTransfer({ transportConfig }: { transportConfig: BrowserTransportConfig }) {
+export function FileTransfer() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [files, setFiles] = useState<StoredFile[]>([]);
@@ -42,6 +42,7 @@ export function FileTransfer({ transportConfig }: { transportConfig: BrowserTran
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
   const [cryptoError, setCryptoError] = useState<string | null>(null);
+  const [transportConfig, setTransportConfig] = useState<BrowserTransportConfig | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loadFiles = useCallback(async (append = false, nextCursor?: string | null) => {
@@ -58,15 +59,29 @@ export function FileTransfer({ transportConfig }: { transportConfig: BrowserTran
     setCursor(payload.nextCursor);
   }, []);
 
-  useEffect(() => {
-    loadFiles().catch((error) => {
+  const loadTransportConfig = useCallback(async () => {
+    const response = await fetch('/api/files/transport-config', { cache: 'no-store' });
+    if (response.status === 401) {
       setAuthenticated(false);
+      return;
+    }
+    const config = await readJson<BrowserTransportConfig>(response);
+    await assertX25519Support(config);
+    setTransportConfig(config);
+    setCryptoError(null);
+  }, []);
+
+  useEffect(() => {
+    const initialize = async () => {
+      await loadFiles();
+      await loadTransportConfig();
+    };
+    initialize().catch((error) => {
+      setAuthenticated(false);
+      setCryptoError('This browser cannot load or use the required X25519/AWR2 transport configuration. Upload is disabled; no plaintext fallback is available.');
       setMessage(errorMessage(error));
     });
-    assertX25519Support(transportConfig).catch(() => {
-      setCryptoError('This browser cannot produce the required X25519/AWR2 encrypted upload. Upload is disabled; no plaintext fallback is available.');
-    });
-  }, [loadFiles, transportConfig]);
+  }, [loadFiles, loadTransportConfig]);
 
   async function login(event: React.FormEvent) {
     event.preventDefault();
@@ -80,6 +95,7 @@ export function FileTransfer({ transportConfig }: { transportConfig: BrowserTran
       }));
       setPassword('');
       await loadFiles();
+      await loadTransportConfig();
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -94,11 +110,13 @@ export function FileTransfer({ transportConfig }: { transportConfig: BrowserTran
       setAuthenticated(false);
       setFiles([]);
       setSelected(null);
+      setTransportConfig(null);
     }
   }
 
   async function upload(file: File) {
     if (cryptoError) return setMessage(cryptoError);
+    if (!transportConfig) return setMessage('Upload transport configuration is not available.');
     if (file.size <= 0 || file.size >= MAX_FILE_SIZE) {
       return setMessage('Choose a non-empty file smaller than 100 MiB.');
     }
