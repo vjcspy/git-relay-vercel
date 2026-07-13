@@ -177,8 +177,11 @@ export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: b
     if (!selected) return;
     setBusy(true);
     setProgress(0);
-    setMessage('Downloading verified chunks…');
+    setMessage('Choose where to save the file…');
     try {
+      const selectedFile = files.find((file) => file.id === selected);
+      const saveFile = await prepareFileSave(selectedFile?.name ?? 'download');
+      setMessage('Downloading verified chunks…');
       const manifest = await readJson<Manifest>(await fetch(`/api/files/${encodeURIComponent(selected)}/manifest`));
       if (manifest.size >= MAX_FILE_SIZE) throw new Error('Manifest exceeds the browser download ceiling');
       const chunks: Uint8Array[] = [];
@@ -293,24 +296,34 @@ async function responseError(response: Response): Promise<string> {
   return payload?.message || payload?.error || `Request failed (${response.status})`;
 }
 
-async function saveFile(name: string, data: Uint8Array): Promise<void> {
-  const picker = (window as Window & { showSaveFilePicker?: (options: { suggestedName: string }) => Promise<{ createWritable(): Promise<{ write(data: Blob): Promise<void>; close(): Promise<void> }> }> }).showSaveFilePicker;
+type SaveFile = (name: string, data: Uint8Array) => Promise<void>;
+
+async function prepareFileSave(suggestedName: string): Promise<SaveFile> {
+  const pickerHost = window as Window & { showSaveFilePicker?: (options: { suggestedName: string }) => Promise<{ createWritable(): Promise<{ write(data: Blob): Promise<void>; close(): Promise<void> }> }> };
+  if (pickerHost.showSaveFilePicker) {
+    const handle = await pickerHost.showSaveFilePicker({ suggestedName });
+    return async (_name, data) => {
+      const blob = fileBlob(data);
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    };
+  }
+  return async (name, data) => {
+    const blob = fileBlob(data);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = name;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  };
+}
+
+function fileBlob(data: Uint8Array): Blob {
   const copy = new Uint8Array(data.byteLength);
   copy.set(data);
-  const blob = new Blob([copy.buffer], { type: 'application/octet-stream' });
-  if (picker) {
-    const handle = await picker({ suggestedName: name });
-    const writable = await handle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-    return;
-  }
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  return new Blob([copy.buffer], { type: 'application/octet-stream' });
 }
 
 function formatBytes(bytes: number): string {
