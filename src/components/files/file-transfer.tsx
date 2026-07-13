@@ -211,8 +211,8 @@ export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: b
       <main className="min-h-screen grid place-items-center p-6 bg-zinc-950 text-zinc-100">
         <form onSubmit={login} className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-7 shadow-2xl">
           <LockKeyhole className="mb-5 h-8 w-8 text-indigo-400" />
-          <h1 className="text-2xl font-semibold">Private file relay</h1>
-          <p className="mt-2 text-sm text-zinc-400">Authenticate to transfer files through this origin.</p>
+          <h1 className="text-2xl font-semibold">Login</h1>
+          <p className="mt-2 text-sm text-zinc-400">Enter your password to continue.</p>
           <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-6 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 outline-none focus:border-indigo-500" placeholder="Password" />
           <button disabled={busy} className="mt-3 w-full rounded-lg bg-indigo-500 px-4 py-2.5 font-medium hover:bg-indigo-400 disabled:opacity-50">Unlock</button>
           {message && <p role="alert" className="mt-4 text-sm text-amber-300">{message}</p>}
