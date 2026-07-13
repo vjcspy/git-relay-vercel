@@ -8,8 +8,13 @@ export function getValidatedServerUrl(): string {
     process.env.NODE_ENV !== 'production' &&
     url.protocol === 'http:' &&
     LOOPBACK_HOSTS.has(url.hostname);
-  if (url.protocol !== 'https:' && !loopbackDevelopment) {
-    throw new Error('SERVER_URL must use HTTPS (plain HTTP is allowed only for loopback development)');
+  const insecureHttpOptIn =
+    url.protocol === 'http:' &&
+    process.env.FILES_ALLOW_INSECURE_SERVER_URL === 'true';
+  if (url.protocol !== 'https:' && !loopbackDevelopment && !insecureHttpOptIn) {
+    throw new Error(
+      'SERVER_URL must use HTTPS (set FILES_ALLOW_INSECURE_SERVER_URL=true to explicitly allow a plaintext HTTP origin)',
+    );
   }
   url.pathname = url.pathname.replace(/\/$/, '');
   return url.toString().replace(/\/$/, '');
