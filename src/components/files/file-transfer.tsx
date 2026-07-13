@@ -32,8 +32,8 @@ interface StatusPayload {
   details?: { error?: string };
 }
 
-export function FileTransfer() {
-  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: boolean }) {
+  const [authenticated, setAuthenticated] = useState(initialAuthenticated);
   const [password, setPassword] = useState('');
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -72,6 +72,7 @@ export function FileTransfer() {
   }, []);
 
   useEffect(() => {
+    if (!initialAuthenticated) return;
     const initialize = async () => {
       await loadFiles();
       await loadTransportConfig();
@@ -81,7 +82,7 @@ export function FileTransfer() {
       setCryptoError('This browser cannot load or use the required X25519/AWR2 transport configuration. Upload is disabled; no plaintext fallback is available.');
       setMessage(errorMessage(error));
     });
-  }, [loadFiles, loadTransportConfig]);
+  }, [initialAuthenticated, loadFiles, loadTransportConfig]);
 
   async function login(event: React.FormEvent) {
     event.preventDefault();
@@ -237,7 +238,7 @@ export function FileTransfer() {
           <h2 className="mt-4 text-lg font-medium">Drop a file here</h2>
           <p className="mt-1 text-sm text-zinc-400">Encrypted AWR2 upload, files smaller than 100 MiB</p>
           <input ref={inputRef} type="file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) upload(file); event.currentTarget.value = ''; }} />
-          <button onClick={() => inputRef.current?.click()} disabled={busy || Boolean(cryptoError)} className="mt-5 rounded-lg bg-indigo-500 px-4 py-2.5 font-medium hover:bg-indigo-400 disabled:opacity-50">Choose file</button>
+          <button onClick={() => inputRef.current?.click()} disabled={busy || Boolean(cryptoError) || !transportConfig} className="mt-5 rounded-lg bg-indigo-500 px-4 py-2.5 font-medium hover:bg-indigo-400 disabled:opacity-50">Choose file</button>
           {cryptoError && <p role="alert" className="mx-auto mt-4 max-w-xl text-sm text-rose-300">{cryptoError}</p>}
         </section>
 

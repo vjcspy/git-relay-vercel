@@ -34,6 +34,10 @@ export function createSessionToken(now = Date.now()): string {
 
 export function hasValidFileSession(req: NextRequest, now = Date.now()): boolean {
   const token = req.cookies.get(FILE_SESSION_COOKIE)?.value;
+  return isValidFileSessionToken(token, now);
+}
+
+export function isValidFileSessionToken(token: string | undefined, now = Date.now()): boolean {
   if (!token || deploymentReadinessError()) return false;
   const parts = token.split('.');
   if (parts.length !== 4 || parts[0] !== SESSION_VERSION) return false;

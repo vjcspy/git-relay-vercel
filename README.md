@@ -55,7 +55,7 @@ If incorrect/missing:
 ### `FILES_PASSWORD`
 
 Purpose:
-- Authenticates the `/files` page
+- Authenticates the `/ahihi` page
 - Derives the signing key for its eight-hour HttpOnly session cookie
 
 There is no separate session-secret or WAF-confirmation environment variable. Changing `FILES_PASSWORD` immediately
