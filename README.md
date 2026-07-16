@@ -77,7 +77,7 @@ Therefore, Vercel does **not** need these server-side crypto envs:
 
 These belong to `git-relay-server` only.
 
-For browser uploads, the authenticated `/api/files/transport-config` route fetches the active key ID and derived public
+For browser uploads, the authenticated `/api/game-saves/transport-config` route fetches the active key ID and derived public
 key from `git-relay-server` using `SERVER_API_KEY`. Vercel does not require `FILE_TRANSPORT_KEY_ID` or
 `FILE_TRANSPORT_PUBLIC_KEY_PEM`.
 

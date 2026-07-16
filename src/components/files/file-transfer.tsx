@@ -48,7 +48,7 @@ export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: b
   const loadFiles = useCallback(async (append = false, nextCursor?: string | null) => {
     const query = new URLSearchParams({ limit: '20' });
     if (nextCursor) query.set('cursor', nextCursor);
-    const response = await fetch(`/api/files?${query}`, { cache: 'no-store' });
+    const response = await fetch(`/api/game-saves?${query}`, { cache: 'no-store' });
     if (response.status === 401) {
       setAuthenticated(false);
       return;
@@ -64,7 +64,7 @@ export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: b
   }, []);
 
   const loadTransportConfig = useCallback(async () => {
-    const response = await fetch('/api/files/transport-config', { cache: 'no-store' });
+    const response = await fetch('/api/game-saves/transport-config', { cache: 'no-store' });
     if (response.status === 401) {
       setAuthenticated(false);
       return;
@@ -93,7 +93,7 @@ export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: b
     setBusy(true);
     setMessage('');
     try {
-      await readJson(await fetch('/api/files/login', {
+      await readJson(await fetch('/api/game-saves/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
@@ -110,7 +110,7 @@ export function FileTransfer({ initialAuthenticated }: { initialAuthenticated: b
 
   async function logout() {
     try {
-      await fetch('/api/files/logout', { method: 'POST' });
+      await fetch('/api/game-saves/logout', { method: 'POST' });
     } finally {
       setAuthenticated(false);
       setFiles([]);
@@ -258,7 +258,7 @@ async function postEncrypted<T = unknown>(path: string, gameData: string): Promi
 
 async function waitUntilStored(sessionId: string): Promise<void> {
   for (let attempt = 0; attempt < 60; attempt++) {
-    const status = await readJson<StatusPayload>(await fetch(`/api/files/status/${encodeURIComponent(sessionId)}`, { cache: 'no-store' }));
+    const status = await readJson<StatusPayload>(await fetch(`/api/game-saves/status/${encodeURIComponent(sessionId)}`, { cache: 'no-store' }));
     if (status.status === 'stored') return;
     if (status.status === 'failed') throw new Error(status.details?.error || status.message);
     await new Promise((resolve) => setTimeout(resolve, 1_000));
@@ -331,7 +331,7 @@ async function uploadEncryptedFile(
           transportConfig,
           chunk,
         );
-        await postEncrypted('/api/files/chunk', gameData);
+        await postEncrypted('/api/game-saves/chunk', gameData);
       });
       completed += 1;
       onProgress(completed / totalChunks * 0.85, 'uploading encrypted chunks');
@@ -339,9 +339,9 @@ async function uploadEncryptedFile(
   };
   await Promise.all([worker(), worker()]);
 
-  await postEncrypted('/api/files/complete', await encryptPayloadV2({ sessionId }, transportConfig));
+  await postEncrypted('/api/game-saves/complete', await encryptPayloadV2({ sessionId }, transportConfig));
   onProgress(0.9, 'finalizing durable storage');
-  const storeResult = await postEncrypted<{ status?: string }>('/api/files/store', await encryptPayloadV2({
+  const storeResult = await postEncrypted<{ status?: string }>('/api/game-saves/store', await encryptPayloadV2({
     sessionId,
     fileName: file.name,
     size: file.size,
@@ -356,12 +356,12 @@ async function downloadVerifiedFile(
   saveFile: SaveFile,
   onProgress: (progress: number) => void,
 ): Promise<void> {
-  const manifest = await readJson<Manifest>(await fetch(`/api/files/${encodeURIComponent(fileId)}/manifest`));
+  const manifest = await readJson<Manifest>(await fetch(`/api/game-saves/${encodeURIComponent(fileId)}/manifest`));
   if (manifest.size >= MAX_FILE_SIZE) throw new Error('Manifest exceeds the browser download ceiling');
   const chunks: Uint8Array[] = [];
   let received = 0;
   for (let index = 0; index < manifest.totalChunks; index++) {
-    const response = await fetch(`/api/files/${encodeURIComponent(fileId)}/chunks/${index}`);
+    const response = await fetch(`/api/game-saves/${encodeURIComponent(fileId)}/chunks/${index}`);
     if (!response.ok) throw new Error(await responseError(response));
     const chunk = new Uint8Array(await response.arrayBuffer());
     chunks.push(chunk);
